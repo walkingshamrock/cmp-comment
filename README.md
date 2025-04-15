@@ -30,6 +30,22 @@
 - Place the cursor inside a comment and trigger completion (e.g., `<C-Space>`).
 - Suggestions will appear based on predefined phrases.
 
+## Configuration
+
+You can customize the suggestions provided by `cmp-comment` by calling the `setup` function in your Neovim configuration. For example:
+
+```lua
+require("cmp_comment").setup({
+  suggestions = {
+    "Custom TODO: ",
+    "Custom FIXME: ",
+    "Custom NOTE: ",
+  }
+})
+```
+
+If no custom suggestions are provided, the plugin will use its default suggestions.
+
 ## Requirements
 - [nvim-cmp](https://github.com/hrsh7th/nvim-cmp)
 - [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter)

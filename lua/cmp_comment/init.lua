@@ -1,15 +1,21 @@
 local source = {}
 
-local suggestions = {
-  "TODO: ",
-  "FIXME: ",
-  "NOTE: ",
-  "This function handles ",
-  "Returns ",
-  "Checks whether ",
-  "Initializes ",
-  "Cleans up ",
+local user_config = {
+  suggestions = {
+    "TODO: ",
+    "FIXME: ",
+    "NOTE: ",
+    "This function handles ",
+    "Returns ",
+    "Checks whether ",
+    "Initializes ",
+    "Cleans up ",
+  }
 }
+
+function source.setup(config)
+  user_config = vim.tbl_deep_extend("force", user_config, config or {})
+end
 
 -- Tree-sitter-based comment detection
 local function is_in_comment()
@@ -39,7 +45,7 @@ end
 function source:complete(_, callback)
   vim.notify("cmp_comment source complete called", vim.log.levels.INFO)
   local items = {}
-  for _, phrase in ipairs(suggestions) do
+  for _, phrase in ipairs(user_config.suggestions) do
     table.insert(items, {
       label = phrase,
       kind = vim.lsp.protocol.CompletionItemKind.Text,

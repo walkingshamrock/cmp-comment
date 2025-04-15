@@ -12,6 +12,10 @@
 ```lua
 {
   'walkingshamrock/cmp-comment',
+  dependencies = {
+    'nvim-treesitter/nvim-treesitter',
+    'hrsh7th/nvim-cmp',
+  },
   config = function()
     require('cmp').setup {
       sources = {

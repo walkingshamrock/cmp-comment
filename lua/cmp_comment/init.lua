@@ -4,7 +4,17 @@ local source = {}
 
 -- Determine if the source is available in the current context
 function source:is_available()
-  return true
+  -- Check if the cursor is in a comment context
+  local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+  row = row - 1 -- Convert to 0-based index
+  local line = vim.api.nvim_buf_get_lines(0, row, row + 1, false)[1]
+
+  if line then
+    local before_cursor = line:sub(1, col)
+    return before_cursor:match("%s*[%-%-%#//]+") ~= nil
+  end
+
+  return false
 end
 
 -- Get the keyword pattern for triggering completion

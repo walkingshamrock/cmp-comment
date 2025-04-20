@@ -1,7 +1,33 @@
+local cmp = require('cmp')
+
 local source = {}
 
-local user_config = {
-  suggestions = {
+-- Determine if the source is available in the current context
+function source:is_available()
+  return true
+end
+
+-- Get the keyword pattern for triggering completion
+function source:get_keyword_pattern()
+  return [[\k*]]
+end
+
+-- Get the trigger characters for the source
+function source:get_trigger_characters()
+  return {"#", "--", "//", "/*"}
+end
+
+-- Register the source with cmp.nvim
+cmp.register_source('comment', source)
+
+-- Setup function for the plugin
+local M = {}
+function M.setup(config)
+  -- Handle configuration options here
+  M.config = config or {}
+
+  -- Use suggestions from the configuration or default suggestions
+  M.suggestions = M.config.suggestions or {
     "TODO: ",
     "FIXME: ",
     "NOTE: ",
@@ -11,44 +37,32 @@ local user_config = {
     "Initializes ",
     "Cleans up ",
   }
-}
 
-function source.setup(config)
-  user_config = vim.tbl_deep_extend("force", user_config, config or {})
-end
+  -- Update the complete function to include suggestions
+  function source:complete(params, callback)
+    local items = {}
 
--- Tree-sitter-based comment detection
-local function is_in_comment()
-  local ok, ts_utils = pcall(require, "nvim-treesitter.ts_utils")
-  if not ok then
-    return false
-  end
-
-  local node = ts_utils.get_node_at_cursor()
-  while node do
-    if node:type():match("comment") then
-      return true
+    -- Add suggestions from the configuration or defaults
+    for _, suggestion in ipairs(M.suggestions) do
+      table.insert(items, {
+        label = suggestion,
+        kind = cmp.lsp.CompletionItemKind.Text,
+      })
     end
-    node = node:parent()
+
+    -- Add comments from the buffer
+    for _, line in ipairs(vim.api.nvim_buf_get_lines(0, 0, -1, false)) do
+      local comment = line:match("%s*[%-%-%#//]+%s*(.+)")
+      if comment then
+        table.insert(items, {
+          label = comment,
+          kind = cmp.lsp.CompletionItemKind.Text,
+        })
+      end
+    end
+
+    callback({ items = items })
   end
-  return false
 end
 
--- Check if source is active in current context
-function source:is_available()
-  return true
-end
-
--- Provide completion items
-function source:complete(_, callback)
-  local items = {}
-  for _, phrase in ipairs(user_config.suggestions) do
-    table.insert(items, {
-      label = phrase,
-      kind = vim.lsp.protocol.CompletionItemKind.Text,
-    })
-  end
-  callback({ items = items, isIncomplete = false })
-end
-
-return source
+return M

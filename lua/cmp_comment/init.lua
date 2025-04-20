@@ -1,4 +1,6 @@
 local cmp = require('cmp')
+local context = require('cmp.config.context')
+local ts_utils = require('nvim-treesitter.ts_utils')
 
 local source = {}
 
@@ -17,21 +19,18 @@ function source:is_available()
     return false
   end
 
-  local ts_utils = require('nvim-treesitter.ts_utils')
-  local node = ts_utils.get_node_at_cursor()
-
   -- Traverse the syntax tree to check if the cursor is in a comment node
-  local comment_types = {"comment", "line_comment", "block_comment"}
+  local node = ts_utils.get_node_at_cursor()
+  local comment_types = {"comment", "line_comment", "block_comment", "doc_comment"}
   while node do
-    for _, comment_type in ipairs(comment_types) do
-      if node:type() == comment_type then
-        return true
-      end
+    if vim.tbl_contains(comment_types, node:type()) then
+      return true
     end
     node = node:parent()
   end
 
-  return false
+  -- Use cmp.config.context to check if the cursor is in a comment syntax group
+  return context.in_syntax_group('Comment') or context.in_treesitter_capture('comment')
 end
 
 -- Get the keyword pattern for triggering completion
@@ -50,10 +49,7 @@ cmp.register_source('comment', source)
 -- Setup function for the plugin
 local M = {}
 function M.setup(config)
-  -- Handle configuration options here
   M.config = config or {}
-
-  -- Use suggestions from the configuration or default suggestions
   M.suggestions = M.config.suggestions or {
     "TODO: ",
     "FIXME: ",

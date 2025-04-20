@@ -4,14 +4,31 @@ local source = {}
 
 -- Determine if the source is available in the current context
 function source:is_available()
-  -- Check if the cursor is in a comment context
+  -- Check if the cursor is in a generic comment using pattern matching
   local row, col = unpack(vim.api.nvim_win_get_cursor(0))
   row = row - 1 -- Convert to 0-based index
   local line = vim.api.nvim_buf_get_lines(0, row, row + 1, false)[1]
+  if line and line:sub(1, col):match("^%s*[#/%-%*]+") then
+    return true
+  end
 
-  if line then
-    local before_cursor = line:sub(1, col)
-    return before_cursor:match("%s*[%-%-%#//]+") ~= nil
+  -- Check if Treesitter is available for the current buffer
+  if not pcall(require, 'nvim-treesitter.ts_utils') then
+    return false
+  end
+
+  local ts_utils = require('nvim-treesitter.ts_utils')
+  local node = ts_utils.get_node_at_cursor()
+
+  -- Traverse the syntax tree to check if the cursor is in a comment node
+  local comment_types = {"comment", "line_comment", "block_comment"}
+  while node do
+    for _, comment_type in ipairs(comment_types) do
+      if node:type() == comment_type then
+        return true
+      end
+    end
+    node = node:parent()
   end
 
   return false
